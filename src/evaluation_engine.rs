@@ -1,6 +1,6 @@
 use phf::phf_map;
 
-// Masks
+// Field Masks
 const COLOR_MASK: u32 =
     0b1_000_000000_000000_0_00_0000000000000;
 
@@ -18,6 +18,13 @@ const PROMOTE_MASK: u32 =
 
 const CHECK_MASK: u32 =
     0b0_000_000000_000000_0_11_0000000000000;
+
+// Flag masks
+
+const PAWN_MOVES_MASK: u32 = 0b111111_000000_00000000000000000000;
+
+const EN_PASSANT_MASK: u32 = 0b000000_111111_00000000000000000000;
+
 
 // Pieces
 pub const PIECE_NONE:   u32 = 0b0_000_000000_000000_0_00_00000000000;
@@ -88,7 +95,7 @@ pub fn eval(chess_move: u32, field: Vec<u32>) -> u32{
         field
     };
 
-
+    let flag_data: u32 = 0b000000_000000_00000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [20] unused
 
 
     println!("{:?}", field);
@@ -96,12 +103,17 @@ pub fn eval(chess_move: u32, field: Vec<u32>) -> u32{
     10
 }
 
-fn find_legal_moves(piece: u32, field: &Vec<u32>, ) -> Vec<u32> {
+fn find_legal_moves(piece: u32, field: &Vec<u32>, flag_data: u32) -> Vec<u32> {
     let mut legal_moves = Vec::new();
 
+    // Piece Data
     let color = piece & COLOR_MASK;
     let piece_type = piece & PIECE_MASK;
     let position = (piece & FROM_MASK) >> 22; // 22 → position wird auf die ersten 6 bits gemapped
+
+    // Flag Data
+    let moves_since_pawn = flag_data & PAWN_MOVES_MASK;
+    let en_passant_square = flag_data & EN_PASSANT_MASK;
 
     match piece_type {
         PIECE_NONE => {}
