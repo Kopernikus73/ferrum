@@ -50,15 +50,32 @@ pub const COLOR_BLACK: u32 =
     0b1_000_000000_000000_0_00_0000000000000;
 
 
+// FEN
+const MAX_COUNTER: u32 = 8;
 
-fn generate_field(fen: Option<String>) -> ([u32; 64], u32) {
+
+// Types
+type Fen = String;
+type FlagData = u32;
+
+
+
+
+/// !TODO \
+/// Generates a field from the calculated chess move
+pub fn generate_field_from_move(_chess_move: u32) -> [u32; 64] {
+    [0; 64]
+}
+/// !TODO \
+/// Generates a field using fen
+pub fn generate_field(fen: Option<&Fen>) -> ([u32; 64], u32) {
     let mut field: [u32; 64] = [0; 64];
     let player_color: u32;
 
     match fen{
         None => {
             eprintln!("\x1b[31mNo fen given\x1b[0m");
-            std::process::exit(3);
+            std::process::exit(10);
         }
         Some(_fen) => {
             // Standard Field //TODO!
@@ -84,7 +101,7 @@ fn generate_field(fen: Option<String>) -> ([u32; 64], u32) {
             // === Schwarze Figuren ===
 
             // Reihe 7
-            //field[56] = PIECE_ROOK   | b;
+            field[56] = PIECE_ROOK   | b;
             field[57] = PIECE_KNIGHT | b;
             field[58] = PIECE_BISHOP | b;
             field[59] = PIECE_QUEEN  | b;
@@ -98,40 +115,60 @@ fn generate_field(fen: Option<String>) -> ([u32; 64], u32) {
             for i in 48..56 {
                 field[i] = PIECE_PAWN | b | ((i as u32) << FROM_SHIFT);
             }
-            field[48] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
 
-            player_color = COLOR_WHITE;
+            // Test Piece
+            // field[48] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
+
+            player_color = COLOR_BLACK;
         }
     }
 
-    // Return field since it's always initialized
+    // Return field and player_color since they are always initialized
     (field, player_color)
 }
+/// !TODO \
+/// Generates FEN using a string
+pub fn generate_fen(field: &[u32; 64], _flag_data: u32) -> String{
 
-pub fn eval(fen: String) -> u32{
-    let (field , player_color): ([u32; 64], u32) = if fen.is_empty(){
-        generate_field(None)
-    } else {
-        generate_field(Some(fen))
-    };
+    let mut fen = String::new();
+    let mut used_squares_counter: u32 = 0;
+    let mut squares_counter: u32 = 0;
+    for i in field{
+        let to_add: char = ' ';
+        match i {
+            &PIECE_PAWN => {
 
-    let flag_data: u32 = 0b000001_001000_00000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [20] unused
-    let mut legal_moves: Vec<u32> = Vec::with_capacity(64);
+            }
+            _ => squares_counter += 1
+        }
 
-    for i in 0..64 {
-        let chess_move = field[i];
-        println!("{:?}", find_legal_moves(chess_move, &field, flag_data, player_color));
+        used_squares_counter += 1;
+
+        if to_add != ' '{
+            match char::from_u32(squares_counter+48){
+                None => {std::process::exit(50)}
+                Some(c) =>{fen.push(c)}
+            }
+            squares_counter = 0;
+            fen.push(to_add);
+        }
+        if used_squares_counter == MAX_COUNTER{
+            match char::from_u32(squares_counter+48){
+                None => {std::process::exit(50)}
+                Some(c) =>{fen.push(c)}
+            }
+            fen.push('/');
+
+            if squares_counter != 0{
+                squares_counter = 0;
+            }
+            used_squares_counter = 0;
+        }
     }
-
-    //println!("{:?}", field);
-    //println!("{:b}", field[8]);
-
-
-    // let best_position = (u32; String) // (value, fen)  -> For single depth
-
-    10
+    fen
 }
 
+/// Find all legal chess_moves a piece can make on the board
 fn find_legal_moves(piece: u32, field: &[u32; 64], flag_data: u32, player_color: u32) -> Vec<u32> {
     let mut legal_moves = Vec::new();
 
@@ -156,46 +193,75 @@ fn find_legal_moves(piece: u32, field: &[u32; 64], flag_data: u32, player_color:
     if color == player_color{
         match piece_type {
             PIECE_NONE => {}
+            // Voll bestimmt
             PIECE_PAWN => {
-
                 // Kein over-/underflow check nötig → kann nicht am Rand stehen
                 if color == COLOR_WHITE {
                     // move forward
                     //println!("{:0b}",field[(position + 8) as usize]);
-                    if field[(position + 8) as usize] == 0 {
+                    if field[(position + 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position + 8);
                     }
-                    if position > 7 && position < 16 && field[(position + 16) as usize] == 0 {
+                    if position > 7 && position < 16 && field[(position + 16) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position + 16);
                     }
 
                     // capture
+                    let left_squares: [u32; 8] = [7,15,23,31,39,47,55,63];
+                    let right_squares: [u32; 8] = [0,8,16,24,32,40,48,56];
+
+                    // right capture
+                    if !right_squares.contains(&position) && field[(position + 7) as usize] & PIECE_MASK != PIECE_NONE && field[(position + 7) as usize] & COLOR_MASK == COLOR_BLACK{
+                        legal_moves.push(position + 7);
+                    }
+
+                    // left capture
+                    if !left_squares.contains(&position)  && field[(position + 9) as usize] & PIECE_MASK != PIECE_NONE && field[(position + 9) as usize] & COLOR_MASK == COLOR_BLACK {
+                        legal_moves.push(position + 9);
+                    }
 
                 } else if color == COLOR_BLACK {
                     // move forward
                     //println!("{}", position);
-                    if field[(position - 8) as usize] == 0 {
+                    if field[(position - 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 8);
                     }
-                    if position > 40 && position < 56 && field[(position - 16) as usize] == 0 {
+                    if position > 40 && position < 56 && field[(position - 16) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 16);
                     }
 
                     // capture
+                    let left_squares: [u32; 8] = [7,15,23,31,39,47,55,63];
+                    let right_squares: [u32; 8] = [0,8,16,24,32,40,48,56];
+
+                    // right capture
+                    if !left_squares.contains(&position)  && field[(position - 7) as usize] & PIECE_MASK != PIECE_NONE && field[(position - 7) as usize] & COLOR_MASK == COLOR_WHITE{
+                        legal_moves.push(position - 7);
+                    }
+
+                    // left capture
+                    if !right_squares.contains(&position) && field[(position - 9) as usize] & PIECE_MASK != PIECE_NONE && field[(position - 9) as usize] & COLOR_MASK == COLOR_WHITE  {
+                        legal_moves.push(position - 9);
+                    }
                 }
             }
+            // Nicht bestimmt
             PIECE_KNIGHT => {
                 // Knight moves
             }
+            // Nicht bestimmt
             PIECE_BISHOP => {
                 // Bishop moves
             }
+            // Nicht bestimmt
             PIECE_ROOK | PIECE_ROOK_MOVED => {
                 // Rook moves
             }
+            // Nicht bestimmt
             PIECE_QUEEN => {
                 // Queen moves
             }
+            // Nicht bestimmt
             PIECE_KING => {
                 // King moves
             }
@@ -206,4 +272,31 @@ fn find_legal_moves(piece: u32, field: &[u32; 64], flag_data: u32, player_color:
     }
 
     legal_moves
+}
+
+fn _evaluate_single_position() -> u32 {
+    10
+}
+
+// Production Accessible functions (Other are available/public due to testing reasons)
+pub fn find_best_move(fen: Option<&Fen>) -> (u32, FlagData){
+    // Generate Field from FEN
+    let (field , player_color): ([u32; 64], u32) = generate_field(fen);
+
+    let flag_data: FlagData = 0b000001_001000_00000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [20] unused
+    let mut legal_moves: Vec<Vec<u32>> = Vec::with_capacity(64);
+
+    for i in 0..64 {
+        let chess_move = field[i];
+        legal_moves.push(find_legal_moves(chess_move, &field, flag_data, player_color));
+    }
+
+    println!("{:?}", legal_moves);
+    //println!("{:?}", field);
+    //println!("{:b}", field[8]);
+
+
+    let best_move: (u32, FlagData) = (0, 0); // (value, fen, flag_data) -> For single depth
+
+    best_move
 }
