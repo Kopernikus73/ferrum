@@ -52,6 +52,7 @@ pub const COLOR_BLACK: u32 =
 
 
 // FEN
+#[allow(dead_code)]
 const MAX_COUNTER: u32 = 8;
 
 
@@ -106,14 +107,14 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
             let b = COLOR_BLACK;
 
             // Reihe 0
-            field[0] = PIECE_ROOK   | w;
-            field[1] = PIECE_KNIGHT | w;
-            field[2] = PIECE_BISHOP | w;
-            field[3] = PIECE_QUEEN  | w;
-            field[4] = PIECE_KING   | w;
-            field[5] = PIECE_BISHOP | w;
-            field[6] = PIECE_KNIGHT | w;
-            field[7] = PIECE_ROOK   | w;
+            field[0] = PIECE_ROOK   | w | (0 << FROM_SHIFT);
+            field[1] = PIECE_KNIGHT | w | (1 << FROM_SHIFT);
+            field[2] = PIECE_BISHOP | w | (2 << FROM_SHIFT);
+            field[3] = PIECE_QUEEN  | w | (3 << FROM_SHIFT);
+            field[4] = PIECE_KING   | w | (4 << FROM_SHIFT);
+            field[5] = PIECE_BISHOP | w | (5 << FROM_SHIFT);
+            field[6] = PIECE_KNIGHT | w | (6 << FROM_SHIFT);
+            field[7] = PIECE_ROOK   | w | (7 << FROM_SHIFT);
 
             // Reihe 1 – weiße Bauern
             for i in 8..16 {
@@ -123,15 +124,14 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
             // === Schwarze Figuren ===
 
             // Reihe 7
-            field[56] = PIECE_ROOK   | b;
-            field[57] = PIECE_KNIGHT | b;
-            field[58] = PIECE_BISHOP | b;
-            field[59] = PIECE_QUEEN  | b;
-            field[60] = PIECE_KING   | b;
-            field[61] = PIECE_BISHOP | b;
-            field[62] = PIECE_KNIGHT | b;
-            field[63] = PIECE_ROOK   | b;
-
+            field[56] = PIECE_ROOK   | b | (56 << FROM_SHIFT);
+            field[57] = PIECE_KNIGHT | b | (57 << FROM_SHIFT);
+            field[58] = PIECE_BISHOP | b | (58 << FROM_SHIFT);
+            field[59] = PIECE_QUEEN  | b | (59 << FROM_SHIFT);
+            field[60] = PIECE_KING   | b | (60 << FROM_SHIFT);
+            field[61] = PIECE_BISHOP | b | (61 << FROM_SHIFT);
+            field[62] = PIECE_KNIGHT | b | (62 << FROM_SHIFT);
+            field[63] = PIECE_ROOK   | b | (63 << FROM_SHIFT);
 
             // Reihe 6 – schwarze Bauern
             for i in 48..56 {
@@ -140,8 +140,10 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
 
             // Test Piece
             //field[40] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
+            field[25] = PIECE_KNIGHT | b | (25 << FROM_SHIFT);
 
-            player_color = COLOR_WHITE;
+
+            player_color = COLOR_BLACK;
         }
     }
 
@@ -216,7 +218,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
     if color == player_color{
         match piece_type {
             PIECE_NONE => {}
-            // Nicht voll bestimmt (En Passant)
+            // Voll bestimmt
             PIECE_PAWN => {
                 // Kein over-/underflow check nötig → kann nicht am Rand stehen
                 if color == COLOR_WHITE {
@@ -282,9 +284,50 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     }
                 }
             }
-            // Nicht bestimmt
+            // Voll bestimmt
             PIECE_KNIGHT => {
-                // Knight moves
+                let left_knight_squares: [u32; 16]  = [7,15,23,31,39,47,55,63,6,14,22,30,38,46,54,62];
+                let right_knight_squares: [u32; 16] = [0,8,16,24,32,40,48,56,1,9,17,25,33,41,49,57];
+                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+
+                // 2 vertical 1 horizontal
+                // 2 up 1 left
+                if  position < 48 && !left_squares.contains(&position) && (field[(position+17) as usize] & COLOR_MASK != player_color || field[(position+17) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position+17);
+                }
+                // 2 down 1 left
+                if position > 15 && !left_squares.contains(&position) && (field[(position-15) as usize] & COLOR_MASK != player_color || field[(position-15) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position-15);
+                }
+
+                // 2 up 1 right
+                if position < 48 && !right_squares.contains(&position) && (field[(position+15) as usize] & COLOR_MASK != player_color || field[(position+15) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position+15);
+                }
+                // 2 down 1 right
+                if position > 15 && !right_squares.contains(&position) && (field[(position-17) as usize] & COLOR_MASK != player_color || field[(position-17) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position-17);
+                }
+
+
+                // 1 vertical 2 horizontal
+                // 1 up 2 left
+                if position < 56 && !left_knight_squares.contains(&position) && (field[(position+10) as usize] & COLOR_MASK != player_color || field[(position+10) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position+10);
+                }
+                // 1 down 2 left
+                if position > 7 && !left_knight_squares.contains(&position) && (field[(position-6) as usize] & COLOR_MASK != player_color || field[(position-6) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position-6);
+                }
+                // 1 up 2 right
+                if position < 56 && !right_knight_squares.contains(&position) && (field[(position+6) as usize] & COLOR_MASK != player_color || field[(position+6) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position+6);
+                }
+                // 1 up 2 right
+                if position > 7 && !right_knight_squares.contains(&position) && (field[(position-10) as usize] & COLOR_MASK != player_color || field[(position-10) as usize] & PIECE_MASK == PIECE_NONE){
+                    legal_moves.push(position-10);
+                }
             }
             // Nicht bestimmt
             PIECE_BISHOP => {
