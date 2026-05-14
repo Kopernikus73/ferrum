@@ -250,7 +250,6 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     if  position + 9 == en_passant_square {
                         legal_moves.push(position + 9);
                     }
-
                 } else if color == COLOR_BLACK {
                     // move forward
                     //println!("{}", position);
@@ -272,6 +271,13 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
 
                     // left capture
                     if !right_squares.contains(&position) && field[(position - 9) as usize] & PIECE_MASK != PIECE_NONE && field[(position - 9) as usize] & COLOR_MASK == COLOR_WHITE  {
+                        legal_moves.push(position - 9);
+                    }
+                    // En Passant
+                    if position - 7 == en_passant_square {
+                        legal_moves.push(position - 7);
+                    }
+                    if  position - 9 == en_passant_square {
                         legal_moves.push(position - 9);
                     }
                 }
