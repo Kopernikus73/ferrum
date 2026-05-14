@@ -34,10 +34,10 @@ As software should always be available for free for everyone, this project uses 
 #### License specifications
 | Permissions                                        | Conditions                                                      | Limitations                                 |
 |----------------------------------------------------|-----------------------------------------------------------------|---------------------------------------------|
-| <span style="color:green;">✓</span> Commercial use | <span style="color:cyan;">ⓘ</span> Disclose source              | <span style="color:red;">✕</span> Liability |
-| <span style="color:green;">✓</span> Distribution   | <span style="color:cyan;">ⓘ</span> License and copyright notice | <span style="color:red;">✕</span> Warranty  |
-| <span style="color:green;">✓</span> Modification   | <span style="color:cyan;">ⓘ</span> Network use is distribution  |                                             |
-| <span style="color:green;">✓</span> Patent use     | <span style="color:cyan;">ⓘ</span> Same license                 |                                             |
-| <span style="color:green;">✓</span> Private use    | <span style="color:cyan;">ⓘ</span> State changes                |                                             |
+| ✅ Commercial use | <span style="color:cyan;">ⓘ</span> Disclose source              | ❌ Liability |
+| ✅ Distribution   | <span style="color:cyan;">ⓘ</span> License and copyright notice | ❌ Warranty  |
+| ✅ Modification   | <span style="color:cyan;">ⓘ</span> Network use is distribution  |                                             |
+| ✅ Patent use     | <span style="color:cyan;">ⓘ</span> Same license                 |                                             |
+| ✅ Private use    | <span style="color:cyan;">ⓘ</span> State changes                |                                             |
 
 Further information: [gnu.org](https://www.gnu.org), [choosealicense.com](https://choosealicense.com/licenses/)
