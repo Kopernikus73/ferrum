@@ -24,6 +24,7 @@ const TO_SHIFT: u32 =      16;
 //const PROMOTE_SHIFT: u32 = 15;
 //const CHECK_SHIFT: u32 =   13;
 
+const FROM_TO_SHIFT: u32 =  6;
 
 // Pieces
 pub const PIECE_NONE:   u32 =
@@ -57,19 +58,39 @@ const MAX_COUNTER: u32 = 8;
 // Types
 type Fen = String;
 type FlagData = u32;
+type Field = [u32; 64];
+type ChessMove = u32;
+type Piece = u32;
 
 
 
-
-/// !TODO \
 /// Generates a field from the calculated chess move
-pub fn generate_field_from_move(_chess_move: u32) -> [u32; 64] {
-    [0; 64]
+pub fn generate_field_from_move(mut field: Field, chess_move: u32) -> Field {
+    let from = chess_move & FROM_MASK;
+    let to = chess_move & TO_MASK;
+
+    // get shifted for index
+    let from_shifted = (from >> FROM_SHIFT) as usize;
+    let to_shifted = (to >> TO_SHIFT) as usize;
+
+    //println!("Field old : {:?}", &field);
+    println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
+
+    // get and remove old piece
+    let piece_to_move = field[from_shifted];
+    field[from_shifted] = PIECE_NONE;
+
+    // place new piece
+    field[to_shifted] = piece_to_move & !FROM_MASK | to << FROM_TO_SHIFT;
+
+    println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
+    //println!("Field new : {:?}", &field);
+    field
 }
 /// !TODO \
 /// Generates a field using fen
-pub fn generate_field(fen: Option<&Fen>) -> ([u32; 64], u32) {
-    let mut field: [u32; 64] = [0; 64];
+pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
+    let mut field: Field = [0; 64];
     let player_color: u32;
 
     match fen{
@@ -117,7 +138,7 @@ pub fn generate_field(fen: Option<&Fen>) -> ([u32; 64], u32) {
             }
 
             // Test Piece
-            // field[48] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
+            //field[40] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
 
             player_color = COLOR_BLACK;
         }
@@ -128,9 +149,9 @@ pub fn generate_field(fen: Option<&Fen>) -> ([u32; 64], u32) {
 }
 /// !TODO \
 /// Generates FEN using a string
-pub fn generate_fen(field: &[u32; 64], _flag_data: u32) -> String{
+pub fn generate_fen_from_field(field: &Field, _flag_data: u32) -> Fen{
 
-    let mut fen = String::new();
+    let mut fen = Fen::new();
     let mut used_squares_counter: u32 = 0;
     let mut squares_counter: u32 = 0;
     for i in field{
@@ -169,8 +190,9 @@ pub fn generate_fen(field: &[u32; 64], _flag_data: u32) -> String{
 }
 
 /// Find all legal chess_moves a piece can make on the board
-fn find_legal_moves(piece: u32, field: &[u32; 64], flag_data: u32, player_color: u32) -> Vec<u32> {
-    let mut legal_moves = Vec::new();
+///
+fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_color: u32) -> Vec<ChessMove> {
+    let mut legal_moves: Vec<ChessMove> = Vec::new();
 
     // Piece Data
     // Only Position and Destination are shifted because they are translated to indices for the field array
@@ -274,14 +296,44 @@ fn find_legal_moves(piece: u32, field: &[u32; 64], flag_data: u32, player_color:
     legal_moves
 }
 
-fn _evaluate_single_position() -> u32 {
-    10
+pub fn evaluate_single_position(field: Field, chess_move: ChessMove) -> i16 {
+    let field = generate_field_from_move(field, chess_move);
+
+    let piece_value = move |piece: &Piece| -> i16{
+        let piece = piece & PIECE_MASK;
+        match piece {
+            PIECE_PAWN => 1,
+            PIECE_KNIGHT => 3,
+            PIECE_BISHOP => 3,
+            PIECE_ROOK => 5,
+            PIECE_ROOK_MOVED => 5,
+            PIECE_QUEEN => 9,
+
+            // Has no value -> always there
+            PIECE_KING => 0,
+
+            PIECE_NONE | _  => 0
+        }
+    };
+
+    let mut white_value: i16 = 0;
+    let mut black_value: i16 = 0;
+
+    for piece in field{
+        match piece & COLOR_MASK{
+            COLOR_WHITE => white_value += piece_value(&piece),
+            COLOR_BLACK | _ => black_value += piece_value(&piece),
+        }
+    }
+
+    // return
+    white_value-black_value
 }
 
 // Production Accessible functions (Other are available/public due to testing reasons)
-pub fn find_best_move(fen: Option<&Fen>) -> (u32, FlagData){
+pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, FlagData){
     // Generate Field from FEN
-    let (field , player_color): ([u32; 64], u32) = generate_field(fen);
+    let (field , player_color): (Field, u32) = generate_field_from_fen(fen);
 
     let flag_data: FlagData = 0b000001_001000_00000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [20] unused
     let mut legal_moves: Vec<Vec<u32>> = Vec::with_capacity(64);
@@ -296,7 +348,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (u32, FlagData){
     //println!("{:b}", field[8]);
 
 
-    let best_move: (u32, FlagData) = (0, 0); // (value, fen, flag_data) -> For single depth
+    let best_move: (ChessMove, FlagData) = (0, 0); // Single Depth
 
     best_move
 }

@@ -1,3 +1,5 @@
+use crate::evaluation_engine::generate_field_from_fen;
+
 mod evaluation_engine;
 
 // Tests import
@@ -8,9 +10,9 @@ fn main(){
     // Start timer
     let start_time = std::time::Instant::now();
 
-    // Get the best move / position
-    let best_move = evaluation_engine::find_best_move(Some(&String::from("1")));
-    let _best_field = evaluation_engine::generate_fen(&evaluation_engine::generate_field_from_move(best_move.0), best_move.1);
+    // TEST Get position value
+    let eval = evaluation_engine::evaluate_single_position(generate_field_from_fen(Some(&String::from("1"))).0, 0b0_000_001000_010000_0_00_0000000000000);
+    println!("{}", eval);
 
     // Get elapsed time since the start
     let elapsed_time = start_time.elapsed().as_nanos();

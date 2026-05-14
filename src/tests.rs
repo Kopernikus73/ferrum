@@ -24,7 +24,7 @@ mod tests {
         ];
 
         for (i, field) in fields.into_iter().enumerate(){
-            let fen = evaluation_engine::generate_fen(&field, flag_data[i]);
+            let fen = evaluation_engine::generate_fen_from_field(&field, flag_data[i]);
             println!("\x1b[32mFEN:\x1b[0m{}", fen);
         }
     }
@@ -34,7 +34,7 @@ mod tests {
         let fens: [String; 1] = [String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")];
 
         for fen in fens.into_iter(){
-            let field = evaluation_engine::generate_field(Some(&fen));
+            let field = evaluation_engine::generate_field_from_fen(Some(&fen));
             println!("\x1b[32mField:\x1b[0m{:?}", field);
         }
     }
