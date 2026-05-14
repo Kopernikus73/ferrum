@@ -1,4 +1,4 @@
-use crate::evaluation_engine::generate_field_from_fen;
+use crate::evaluation_engine::{find_best_move, generate_field_from_fen, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
 
 mod evaluation_engine;
 
@@ -11,8 +11,13 @@ fn main(){
     let start_time = std::time::Instant::now();
 
     // TEST Get position value
-    let eval = evaluation_engine::evaluate_single_position(generate_field_from_fen(Some(&String::from("1"))).0, 0b0_000_001000_010000_0_00_0000000000000);
-    println!("{}", eval);
+    //let eval = evaluation_engine::evaluate_single_position(&generate_field_from_fen(Some(&String::from("1"))).0, 0b0_000_001000_010000_0_00_0000000000000);
+    //println!("{}", eval);
+
+
+    // Test find_best_move function
+    let best_move = find_best_move(Some(&String::from("1")));
+    println!("from->to: {}->{} with eval: {}", (best_move.0 & FROM_MASK) >> FROM_SHIFT, (best_move.0 & TO_MASK) >> TO_SHIFT, best_move.1);
 
     // Get elapsed time since the start
     let elapsed_time = start_time.elapsed().as_nanos();

@@ -10,11 +10,11 @@ mod tests {
 
         for fen in fens.into_iter(){
             let evaluation = evaluation_engine::find_best_move(Some(&fen));
-            println!("\x1b[32mEvaluation:\x1b[0m{}", evaluation.0);
+            println!("\x1b[32mEvaluation:\x1b[0m{}", evaluation.1);
         }
     }
 
-    #[test]
+    /*#[test]
     fn test_fen_generation(){
         let fields: [[u32; 64]; 1] = [
             [0; 64]
@@ -27,7 +27,7 @@ mod tests {
             let fen = evaluation_engine::generate_fen_from_field(&field, flag_data[i]);
             println!("\x1b[32mFEN:\x1b[0m{}", fen);
         }
-    }
+    }*/
 
     #[test]
     fn test_field_generation(){
