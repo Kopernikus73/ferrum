@@ -32,12 +32,12 @@ The binary is located in `/target/release` as `ferrum`
 As software should always be available for free for everyone, this project uses the GNU AGPLv3 License.
 
 #### License specifications
-| Permissions                                        | Conditions                                                      | Limitations                                 |
-|----------------------------------------------------|-----------------------------------------------------------------|---------------------------------------------|
+| Permissions      | Conditions                                                      | Limitations |
+|------------------|-----------------------------------------------------------------|-------------|
 | ✅ Commercial use | <span style="color:cyan;">ⓘ</span> Disclose source              | ❌ Liability |
 | ✅ Distribution   | <span style="color:cyan;">ⓘ</span> License and copyright notice | ❌ Warranty  |
-| ✅ Modification   | <span style="color:cyan;">ⓘ</span> Network use is distribution  |                                             |
-| ✅ Patent use     | <span style="color:cyan;">ⓘ</span> Same license                 |                                             |
-| ✅ Private use    | <span style="color:cyan;">ⓘ</span> State changes                |                                             |
+| ✅ Modification   | <span style="color:cyan;">ⓘ</span> Network use is distribution  |             |
+| ✅ Patent use     | <span style="color:cyan;">ⓘ</span> Same license                 |             |
+| ✅ Private use    | <span style="color:cyan;">ⓘ</span> State changes                |             |
 
 Further information: [gnu.org](https://www.gnu.org), [choosealicense.com](https://choosealicense.com/licenses/)
