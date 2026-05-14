@@ -1,4 +1,4 @@
-use crate::evaluation_engine::{find_best_move, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
+use crate::evaluation_engine::{find_best_move, generate_field_from_move, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
 
 mod evaluation_engine;
 
@@ -13,7 +13,6 @@ fn main(){
     // TEST Get position value
     //let eval = evaluation_engine::evaluate_single_position(&generate_field_from_fen(Some(&String::from("1"))).0, 0b0_000_001000_010000_0_00_0000000000000);
     //println!("{}", eval);
-
 
     // Test find_best_move function
     let best_move = find_best_move(Some(&String::from("1")));

@@ -24,7 +24,7 @@ pub const TO_SHIFT: u32 =    16;
 //const PROMOTE_SHIFT: u32 = 15;
 //const CHECK_SHIFT: u32 =   13;
 
-const FROM_TO_SHIFT: u32 =  6;
+//const FROM_TO_SHIFT: u32 =  6;
 
 // Pieces
 pub const PIECE_NONE:   u32 =
@@ -116,7 +116,7 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
 
             // Test Piece
             //field[40] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
-            field[25] = PIECE_KNIGHT | b | (25 << FROM_SHIFT);
+            //field[25] = PIECE_KNIGHT | b | (25 << FROM_SHIFT);
 
 
             player_color = COLOR_BLACK;
@@ -130,7 +130,7 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
 #[allow(dead_code)]
 /// !TODO \
 /// Generates FEN using a string
-pub fn generate_fen_from_field(field: &Field, flag_data: u32) -> Fen{
+pub fn generate_fen_from_field(field: &Field, _flag_data: u32) -> Fen{
     let mut fen = Fen::new();
     let mut used_squares_counter: u32 = 0;
     let mut squares_counter: u32 = 0;
@@ -171,27 +171,32 @@ pub fn generate_fen_from_field(field: &Field, flag_data: u32) -> Fen{
 
 /// TODO! \
 /// Generates a field from the calculated chess move
-pub fn generate_field_from_move(mut field: Field, chess_move: u32) -> Field {
-    let from = chess_move & FROM_MASK;
-    let to = chess_move & TO_MASK;
+pub fn generate_field_from_move(mut field: Field, mut flag_data: FlagData, from_usize: usize, to_u32: u32) -> (Field, FlagData) {
+    let from_u32 = from_usize as u32;
+    let to_usize = to_u32 as usize;
 
-    // get shifted for index
-    let from_shifted = (from >> FROM_SHIFT) as usize;
-    let to_shifted = (to >> TO_SHIFT) as usize;
+    // shifted for piece data
+    let from_shifted = from_usize << FROM_SHIFT;
+    let to_shifted = to_usize << TO_SHIFT;
 
     //println!("Field old : {:?}", &field);
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
 
     // get and remove old piece
-    let piece_to_move = field[from_shifted];
-    field[from_shifted] = PIECE_NONE;
+    let piece_to_move = field[from_usize];
+    field[from_usize] = PIECE_NONE;
+
+    // Adjust flag_data
+    if piece_to_move & PIECE_MASK == PIECE_PAWN{
+        flag_data = (flag_data & PAWN_MOVES_MASK) + (1 << PAWN_MOVES_SHIFT);
+    }
 
     // place new piece
-    field[to_shifted] = piece_to_move & !FROM_MASK | to << FROM_TO_SHIFT;
+    field[to_usize] = piece_to_move & !FROM_MASK | (to_u32 << TO_SHIFT);
 
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
     //println!("Field new : {:?}", &field);
-    field
+    (field, flag_data)
 }
 
 
@@ -359,9 +364,10 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
 
 /// TODO! \
 /// Evaluates a single position and returns it's evaluated score
-pub fn evaluate_single_position(field: &Field) -> EvaluationScore {
+pub fn evaluate_single_position(field: &Field, flag_data: &FlagData) -> EvaluationScore {
     let piece_value = move |piece: &Piece| -> EvaluationScore{
         let piece = piece & PIECE_MASK;
+        // Normal Chess Piece Value (These may be multiples later)
         match piece {
             PIECE_PAWN => 1,
             PIECE_KNIGHT => 3,
@@ -370,25 +376,25 @@ pub fn evaluate_single_position(field: &Field) -> EvaluationScore {
             PIECE_ROOK_MOVED => 5,
             PIECE_QUEEN => 9,
 
-            // Has no value -> always there
+            // No Value
             PIECE_KING => 0,
-
             PIECE_NONE | _  => 0
         }
     };
 
-    let mut white_value: EvaluationScore = 0;
-    let mut black_value: EvaluationScore = 0;
+    let mut white_evaluation_score: EvaluationScore = 0;
+    let mut black_evaluation_score: EvaluationScore = 0;
 
+    // Add piece value to evaluation score
     for piece in field{
         match piece & COLOR_MASK{
-            COLOR_WHITE => white_value += piece_value(&piece),
-            COLOR_BLACK | _ => black_value += piece_value(&piece),
+            COLOR_WHITE => white_evaluation_score += piece_value(&piece),
+            COLOR_BLACK | _ => black_evaluation_score += piece_value(&piece),
         }
     }
 
     // return
-    white_value-black_value
+    white_evaluation_score - black_evaluation_score
 }
 
 // Production Accessible functions (Other are available/public due to testing reasons)
@@ -416,19 +422,19 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
     // ## Single Depth - No Alpha-Beta pruning ##
     // Most simple Szenario: no a-b pruning, checking every single move till the end (here firstly only one move)
 
-    let mut current_best_eval: EvaluationScore;
+    let mut current_best_eval: EvaluationScore = evaluate_single_position(&field, &flag_data);
     let mut current_best_move: ChessMove = 0;
-    //println!("INIT best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
+    println!("INIT Eval: {}", &current_best_eval);
 
     match player_color{
         COLOR_WHITE => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    let field = generate_field_from_move(field, *chess_move);
-                    let eval = evaluate_single_position(&field);
+                    let (field, flag_data) = generate_field_from_move(field, flag_data, piece_index, *chess_move);
+                    let eval = evaluate_single_position(&field, &flag_data);
                     if eval > current_best_eval {
                         current_best_eval = eval;
-                        current_best_move = (chess_move << TO_SHIFT) | (piece_index as u32) << FROM_SHIFT;
+                        current_best_move = (chess_move << TO_SHIFT) | ((piece_index as u32) << FROM_SHIFT);
                         println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
                     }
                 }
@@ -437,10 +443,11 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
         COLOR_BLACK => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    let eval = evaluate_single_position(&field, *chess_move);
+                    let (field, flag_data) = generate_field_from_move(field, flag_data, piece_index, *chess_move);
+                    let eval = evaluate_single_position(&field, &flag_data);
                     if eval < current_best_eval {
                         current_best_eval = eval;
-                        current_best_move = (chess_move << TO_SHIFT) | (piece_index as u32) << FROM_SHIFT;
+                        current_best_move = (chess_move << TO_SHIFT) | ((piece_index as u32) << FROM_SHIFT);
                         println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
                     }
                 }
@@ -449,7 +456,8 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
         _ => {}
     }
 
-
+    // TODO!
+    // If no move leads to a better position -> take first move since it wouldn't continue otherwise
 
     // Return the best move
     (current_best_move, current_best_eval)
