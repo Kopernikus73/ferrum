@@ -116,7 +116,9 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
 
             // Test Piece
             //field[40] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
-            //field[25] = PIECE_KNIGHT | b | (25 << FROM_SHIFT);
+            field[25] = PIECE_BISHOP | b | (25 << FROM_SHIFT);
+            field[39] = PIECE_BISHOP | b | (39 << FROM_SHIFT);
+            field[6] = PIECE_BISHOP | b | (6 << FROM_SHIFT);
 
 
             player_color = COLOR_BLACK;
@@ -209,7 +211,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
     // Only Position and Destination are shifted because they are translated to indices for the field array
     let color = piece & COLOR_MASK;
     let piece_type = piece & PIECE_MASK;
-    let position = (piece & FROM_MASK) >> FROM_SHIFT;
+    let position: u32 = (piece & FROM_MASK) >> FROM_SHIFT;
     let _destination = (piece & TO_MASK) >> TO_SHIFT;
     let _promotion = piece & PROMOTE_MASK;
     let _check = piece & CHECK_MASK;
@@ -337,9 +339,80 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     legal_moves.push(position-10);
                 }
             }
-            // Nicht bestimmt
+            // Voll bestimmt
             PIECE_BISHOP => {
-                // Bishop moves
+                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+                // up-right
+                for move_length in 1..8{
+                    if !(position<56) || (position+(7*move_length)) > 56{
+                        break
+                    }
+                    if !right_squares.contains(&position) && field[(position+(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+(7*move_length));
+                    } else if !right_squares.contains(&position) && field[(position+(7*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+(7*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position+(7*move_length))){
+                        break
+                    }
+                }
+                // up-left
+                for move_length in 1..8{
+                    if !(position<56) || (position+(9*move_length)) > 56{
+                        break
+                    }
+                    if !left_squares.contains(&position) && field[(position+(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+(9*move_length));
+                    } else if !left_squares.contains(&position) && field[(position+(9*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+(9*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position+(9*move_length))){
+                        break
+                    }
+                }
+                // down-right
+                for move_length in 1..8{
+                    if !(position>8) || (position-(9*move_length)) < 8{
+                        break
+                    }
+                    if !right_squares.contains(&position) && field[(position-(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-(9*move_length));
+                    } else if !right_squares.contains(&position) && field[(position-(9*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-(9*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position-(9*move_length))){
+                        break
+                    }
+
+                }
+                // down-left
+                for move_length in 1..8{
+                    if !(position>8) || (position-(7*move_length)) < 8 {
+                        break
+                    }
+                    println!("{} && {} -> {}",!left_squares.contains(&position),field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE, field[(position-(7*move_length)) as usize]);
+                    if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE {
+                        legal_moves.push(position-(7*move_length));
+                    } else if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-(7*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position-(7*move_length))){
+                        break
+                    }
+                }
             }
             // Nicht bestimmt
             PIECE_ROOK | PIECE_ROOK_MOVED => {
@@ -458,6 +531,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
 
     // TODO!
     // If no move leads to a better position -> take first move since it wouldn't continue otherwise
+    // Just as a fallback -> won't be needed with a more complex evaluation since little position changes can lead to big eval changes
 
     // Return the best move
     (current_best_move, current_best_eval)
