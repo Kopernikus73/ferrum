@@ -1,6 +1,6 @@
 # Ferrum
 
-A simple chess bot for your command line.
+A simple chess bot for your command line. (Not functional yet)
 
 ## About Ferrum
 
