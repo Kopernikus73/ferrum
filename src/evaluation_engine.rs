@@ -1,11 +1,23 @@
+use rand::RngExt;
+
 // Flag Masks + Shifts
 const PAWN_MOVES_MASK: u32 =
-    0b111111_000000_00000000000000000000;
+    0b111111_000000_0_0_000000000_000000000;
 const EN_PASSANT_MASK: u32 =
-    0b000000_111111_00000000000000000000;
+    0b000000_111111_0_0_000000000_000000000;
+const CASTLE_QUEEN_MASK: u32 =
+    0b000000_000000_1_0_000000000_000000000;
+const CASTLE_KING_MASK: u32 =
+    0b000000_000000_0_1_000000000_000000000;
+const TOTAL_MOVES_MASK: u32 =
+    0b000000_000000_0_0_111111111_000000000;
+
 
 const PAWN_MOVES_SHIFT: u32 = 26;
 const EN_PASSANT_SHIFT: u32 = 20;
+const CASTLE_QUEEN_SHIFT: u32 = 19;
+const CASTLE_KING_SHIFT: u32 = 18;
+const TOTAL_MOVES_SHIFT: u32 = 9;
 
 
 
@@ -65,19 +77,211 @@ pub type Piece = u32;
 pub type EvaluationScore = i16;
 
 
+macro_rules! p {
+    (none) => {
+        PIECE_NONE
+    };
+    (p, $color:tt, $spot:expr) => {
+        PIECE_PAWN | pcolor!($color) | $spot << FROM_SHIFT
+    };
+    (b, $color:tt, $spot:expr) => {
+        PIECE_BISHOP | pcolor!($color) | $spot << FROM_SHIFT
+    };
+    (n, $color:tt, $spot:expr) => {
+        PIECE_KNIGHT | pcolor!($color) | $spot << FROM_SHIFT
+    };
+    (r, $color:tt, $spot:expr) => {
+        PIECE_ROOK | pcolor!($color) | $spot << FROM_SHIFT
+    };
+    (q, $color:tt, $spot:expr) => {
+        PIECE_QUEEN | pcolor!($color) | $spot << FROM_SHIFT
+    };
+    (k, $color:tt, $spot:expr) => {
+        PIECE_KING | pcolor!($color) | $spot << FROM_SHIFT
+    };
+}
+macro_rules! pcolor {
+    (black) => {
+        COLOR_BLACK
+    };
+    (white) => {
+        COLOR_WHITE
+    }
+}
+
+
 /// !TODO \
 /// Generates a field using fen
-pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
+pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
     let mut field: Field = [0; 64];
     let player_color: u32;
+    let mut flag_data: FlagData = 0b000000_000000_0_0_000000000_000000000; // [6] moves_since_pawn, [6] en_passant_square, [1] castle queen, [1] castle queen, ?[9] total moves, [18/9?] unused
+
+    fn debug_field_binary(field: &Field, label: &str) {
+        println!("{}:", label);
+        for i in 0..64 {
+            if i % 8 == 0 && i > 0 {
+                print!("\n ");
+            }
+            if i % 8 == 0 {
+                print!(" ");
+            }
+            print!("{:04b} ", (field[i] >> 28) & 0b1111);
+        }
+        println!("\n");
+    }
 
     match fen{
         None => {
             eprintln!("\x1b[31mNo fen given\x1b[0m");
             std::process::exit(10);
         }
-        Some(_fen) => {
-            // Standard Field //TODO!
+        Some(fen) => {
+            let fen_parts = fen.split(" ").collect::<Vec<&str>>();
+
+            if fen_parts.len() != 6{
+                eprintln!("\x1b[31mInvalid fen length\x1b[0m");
+                std::process::exit(11);
+            }
+            println!("{:?}", fen_parts);
+
+            // Field
+            let mut current_position: u32 = 0;
+            for piece_part in fen_parts[0].chars() {
+                match piece_part {
+                    'r' => {
+                        field[current_position as usize] = p!(r, white, current_position);
+                        current_position += 1;
+                    }
+                    'n' => {
+                        field[current_position as usize] = p!(n, white, current_position);
+                        current_position += 1;
+                    }
+                    'b' => {
+                        field[current_position as usize] = p!(b, white, current_position);
+                        current_position += 1;
+                    }
+                    'q' => {
+                        field[current_position as usize] = p!(q, white, current_position);
+                        current_position += 1;
+                    }
+                    'k' => {
+                        field[current_position as usize] = p!(k, white, current_position);
+                        current_position += 1;
+                    }
+                    'p' => {
+                        field[current_position as usize] = p!(p, white, current_position);
+                        current_position += 1;
+                    }
+                    'R' => {
+                        field[current_position as usize] = p!(r, black, current_position);
+                        current_position += 1;
+                    }
+                    'N' => {
+                        field[current_position as usize] = p!(n, black, current_position);
+                        current_position += 1;
+                    }
+                    'B' => {
+                        field[current_position as usize] = p!(b, black, current_position);
+                        current_position += 1;
+                    }
+                    'Q' => {
+                        field[current_position as usize] = p!(q, black, current_position);
+                        current_position += 1;
+                    }
+                    'K' => {
+                        field[current_position as usize] = p!(k, black, current_position);
+                        current_position += 1;
+                    }
+                    'P' => {
+                        field[current_position as usize] = p!(p, black, current_position);
+                        current_position += 1;
+                    }
+                    '/' => {
+
+                    }
+                    _ => {
+                        if let Some(free_spaces) = piece_part.to_digit(10) {
+                            current_position += free_spaces;
+                            for field_index in 0..free_spaces {
+                                field[(current_position + field_index) as usize] = p!(none);
+                            }
+                        } else {
+                            eprintln!("\x1b[31mInvalid fen piece character\x1b[0m");
+                            std::process::exit(12);
+                        }
+                    }
+                }
+            }
+            debug_field_binary(&field, "Field");
+
+            // Player Color
+            player_color = match fen_parts[1]{
+                "w" =>     {COLOR_WHITE},
+                "b" => {COLOR_BLACK},
+                _ => {
+                    eprintln!("\x1b[31mInvalid fen color character\x1b[0m");
+                    std::process::exit(13);
+                }
+            };
+
+            // Flag Data
+            for castle_part in fen_parts[2].chars() {
+                match castle_part{
+                    'q' | 'Q' => {
+                        flag_data += 0b1 << CASTLE_QUEEN_SHIFT;
+                    }
+                    'k' | 'K' => {
+                        flag_data += 0b1 << CASTLE_KING_SHIFT;
+                    }
+                    '-' => {
+
+                    }
+                    _ => {
+                        eprintln!("\x1b[31mInvalid fen castle character\x1b[0m");
+                        std::process::exit(14);
+                    }
+                }
+            }
+
+            // TODO! EN PASSANT + ALGEBRAIC PARSER
+
+            if let Ok(moves_since_pawn) = fen_parts[4].parse::<u32>(){
+                flag_data += moves_since_pawn << PAWN_MOVES_SHIFT;
+            } else{
+                eprintln!("\x1b[31mInvalid fen moves since last pawn move number\x1b[0m");
+                std::process::exit(15);
+            }
+
+            if let Ok(total_moves) = fen_parts[5].parse::<u32>(){
+                flag_data += (total_moves - 1) << TOTAL_MOVES_SHIFT; // -1 because these are total moves and not the current move number as in FEN notation
+            } else{
+                eprintln!("\x1b[31mInvalid fen total moves number\x1b[0m");
+                std::process::exit(16);
+            }
+        }
+    }
+    // FOR MANUAL
+    /*field = [
+        p!(r, white, 0),p!(none),p!(b, white, 2),p!(k, white, 3),p!(q, white, 4),p!(b, white, 5),p!(none),p!(r, white, 7),
+        p!(none),p!(none),p!(p, white, 10),p!(none),p!(p, white, 12),p!(p, white, 13),p!(p, white, 14),p!(none),
+        p!(p, white, 16),p!(none),p!(n, white, 18),p!(none),p!(none),p!(n, white, 21),p!(none),p!(none),
+        p!(none),p!(p, white, 25),p!(none),p!(p, white, 27),p!(none),p!(p, black, 29),p!(none),p!(p, white, 31),
+        p!(p, black, 32),p!(p, black, 33),p!(none),p!(none),p!(none),p!(none),p!(none),p!(none),
+        p!(none),p!(none),p!(none),p!(p, black, 43),p!(none),p!(none),p!(none),p!(none),
+        p!(none),p!(none),p!(p, black, 50),p!(none),p!(p, black, 52),p!(none),p!(p, black, 54),p!(p, black, 55),
+        p!(r, black, 56),p!(n, black, 57),p!(b, black, 58),p!(k, black, 59),p!(q, black, 60),p!(b, black, 61),p!(n, black, 62),p!(r, black, 63),
+    ];
+    player_color = pcolor!(white);
+    */
+
+    println!("fd: {}", flag_data);
+    // Return field and player_color since they are always initialized
+    (field, player_color, flag_data)
+}
+
+/*
+// Standard Field //TODO!
             // === Weiße Figuren ===
             let w = COLOR_WHITE;
             let b = COLOR_BLACK;
@@ -130,13 +334,8 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
             field[12] = PIECE_NONE;
             field[37] = PIECE_KING | w | (37 << FROM_SHIFT);
 
-            player_color = COLOR_WHITE;
-        }
-    }
-
-    // Return field and player_color since they are always initialized
-    (field, player_color)
-}
+            //player_color = COLOR_WHITE;
+ */
 
 #[allow(dead_code)]
 /// !TODO \
@@ -210,7 +409,6 @@ pub fn generate_field_from_move(field: &mut Field, flag_data: &mut FlagData, fro
     //println!("Field new : {:?}", &field);
     time_check.elapsed().as_nanos()
 }
-
 // !IRGENDWAS FALSCH
 
 /// TODO! \
@@ -279,7 +477,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     if field[(position - 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 8);
                     }
-                    if position > 40 && position < 56 && (field[(position - 16) as usize] | field[(position - 8) as usize]) & PIECE_MASK == PIECE_NONE {
+                    if position > 47 && position < 56 && (field[(position - 16) as usize] | field[(position - 8) as usize]) & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 16);
                     }
 
@@ -693,6 +891,8 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
 /// TODO! \
 /// Evaluates a single position and returns it's evaluated score
 pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> EvaluationScore {
+
+
     let piece_value = move |piece: &Piece| -> EvaluationScore{
         let piece = piece & PIECE_MASK;
         // Normal Chess Piece Value (These may be multiples later)
@@ -711,6 +911,9 @@ pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> Evaluat
     let mut white_evaluation_score: EvaluationScore = 0;
     let mut black_evaluation_score: EvaluationScore = 0;
 
+    let mut rng = rand::rng();
+    white_evaluation_score += rng.random_range(0..10);
+
     // Add piece value to evaluation score
     for piece in field{
         match piece & COLOR_MASK{
@@ -728,15 +931,18 @@ pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> Evaluat
 /// Finds the best possible move according to the evaluation sore from `evaluate_single_position()`
 pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagData){
     // Generate Field from FEN
-    let (mut field , player_color): (Field, u32) = generate_field_from_fen(fen);
+    let (mut field , player_color, mut flag_data): (Field, u32, FlagData) = generate_field_from_fen(fen);
 
-    let mut flag_data: FlagData = 0b000000_000000_1_1_000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [1] castle queen, [1] castle queen, ?[9] total moves, [18/9?] unused
+    //let mut flag_data: FlagData = 0b000000_000000_1_1_000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [1] castle queen, [1] castle queen, ?[9] total moves, [18/9?] unused
     let mut legal_moves: Vec<Vec<u32>> = Vec::with_capacity(64);
 
     for i in 0..64 {
         let chess_move = field[i];
         legal_moves.push(find_legal_moves(chess_move, &field, flag_data, player_color));
+        println!("PIECE{}: {:?}",i, legal_moves[i]);
     }
+    //println!("piece3:{:b}", field[3]);
+    println!("\nfd: {:032b}\n",&flag_data);
 
     //println!("{:?}", legal_moves);
 
@@ -793,7 +999,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
 
     let final_time = added_time / numberoftimes;
 
-    println!("\x1b[33mInner Time:\x1b[0m {:?}\n\x1b[33mFINISHED TIME:\x1b[0m {}ns",elapsed_time_inner.elapsed() ,&final_time);
+    println!("\x1b[33mInner Time:\x1b[0m {:?}\n\x1b[33mFINISHED TIME:\x1b[0m {}ns | {}ns",elapsed_time_inner.elapsed() ,&final_time, added_time);
 
     // TODO!
     // If no move leads to a better position -> take first move since it wouldn't continue otherwise

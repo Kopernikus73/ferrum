@@ -20,6 +20,8 @@ mod tests {
 
         for (i, fen) in fens.into_iter().enumerate(){
             let field = generate_field_from_fen(Some(&fen));
+            //println!("{:?}", &field);
+            debug_field_binary(&field.0, "Generated Field (binary)");
 
             tests_passed += if field.0 == expected_fields[i]{
                 1
@@ -29,8 +31,23 @@ mod tests {
         }
 
         assert_eq!(NUMBER_TESTS_GENERATE_FIELD_FROM_FEN, tests_passed);
-    }
 
+        // Hilfsfunktion für die Testausgabe
+        fn debug_field_binary(field: &Field, label: &str) {
+            println!("{}:", label);
+            for i in 0..64 {
+                if i % 8 == 0 && i > 0 {
+                    print!("\n ");
+                }
+                if i % 8 == 0 {
+                    print!(" ");
+                }
+                print!("{:04b} ", (field[i] >> 28) & 0b1111);
+            }
+            println!("\n");
+        }
+    }
+    
     #[test]
     fn test_generate_fen_from_field(){
         let fields: [Field; NUMBER_TESTS_GENERATE_FEN_FROM_FIELD] = [
@@ -104,8 +121,8 @@ mod tests {
 
         for fen in fens.into_iter(){
             let evaluation = find_best_move(Some(&fen));
-            println!("\x1b[32mMove:\x1b[0m{}", evaluation.0);
-            println!("\x1b[32mEvaluation:\x1b[0m{}", evaluation.1);
+            //println!("\x1b[32mMove:\x1b[0m{}", evaluation.0);
+            //println!("\x1b[32mEvaluation:\x1b[0m{}", evaluation.1);
         }
     }
 }

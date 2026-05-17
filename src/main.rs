@@ -15,8 +15,21 @@ fn main(){
     //println!("{}", eval);
 
     // Test find_best_move function
-    let best_move = find_best_move(Some(&String::from("1")));
-    println!("from->to: {}->{} with eval: {}", (best_move.0 & FROM_MASK) >> FROM_SHIFT, (best_move.0 & TO_MASK) >> TO_SHIFT, best_move.1);
+    let best_move = find_best_move(Some(&String::from("\
+    rnbqkbnr/1p1ppppp/p1p5/8/3PP3/3B4/PPP2PPP/RNBQK1NR b KQkq - 1 3\
+    ")));
+    println!("from->to: {}->{} with eval: {}\n", (best_move.0 & FROM_MASK) >> FROM_SHIFT, (best_move.0 & TO_MASK) >> TO_SHIFT, best_move.1);
+
+    fn print_grid() {
+        for row in (0..8).rev() {
+            for col in (0..8).rev() {
+                let num = row * 8 + col;
+                print!("{:>2} ", num);
+            }
+            println!();
+        }
+    }
+    print_grid();
 
     // Get elapsed time since the start
     let elapsed_time = start_time.elapsed().as_nanos();
@@ -48,4 +61,5 @@ fn format_duration(nanos: u128) -> String {
 //              10 - 49 (user error)
 //              50 - 99 (internal error)
 // 10 -> No fen given
+// 11 -> Invalid fen given
 // 50 -> internal error: could not find char
