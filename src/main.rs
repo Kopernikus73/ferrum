@@ -21,7 +21,7 @@ fn main(){
     // Get elapsed time since the start
     let elapsed_time = start_time.elapsed().as_nanos();
     println!("------------------------------------");
-    println!("Elapsed time: {}", format_duration(elapsed_time));
+    println!("\x1b[33mElapsed time:\x1b[0m {}", format_duration(elapsed_time));
     println!("------------------------------------");
 }
 

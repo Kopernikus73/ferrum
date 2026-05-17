@@ -738,7 +738,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
         legal_moves.push(find_legal_moves(chess_move, &field, flag_data, player_color));
     }
 
-    println!("{:?}", legal_moves);
+    //println!("{:?}", legal_moves);
 
 
     // ########################
@@ -754,6 +754,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
 
     let mut elapsed_times: Vec<u128> = vec![];
 
+    let elapsed_time_inner = std::time::Instant::now();
     match player_color{
         COLOR_WHITE => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
@@ -792,7 +793,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
 
     let final_time = added_time / numberoftimes;
 
-    println!("FINISHED TIME: {}ns", &final_time);
+    println!("\x1b[33mInner Time:\x1b[0m {:?}\n\x1b[33mFINISHED TIME:\x1b[0m {}ns",elapsed_time_inner.elapsed() ,&final_time);
 
     // TODO!
     // If no move leads to a better position -> take first move since it wouldn't continue otherwise
