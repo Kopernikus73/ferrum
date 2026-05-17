@@ -37,8 +37,8 @@ pub const PIECE_BISHOP: u32 =
     0b0_011_000000_000000_0_00_0000000000000;
 pub const PIECE_ROOK:   u32 =
     0b0_100_000000_000000_0_00_0000000000000;
-pub const PIECE_ROOK_MOVED:   u32 =
-    0b0_101_000000_000000_0_00_0000000000000;
+//pub const PIECE_ROOK_MOVED:   u32 =
+    //0b0_101_000000_000000_0_00_0000000000000;
 pub const PIECE_QUEEN:  u32 =
     0b0_110_000000_000000_0_00_0000000000000;
 pub const PIECE_KING:   u32 =
@@ -86,8 +86,8 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
             field[0] = PIECE_ROOK   | w | (0 << FROM_SHIFT);
             field[1] = PIECE_KNIGHT | w | (1 << FROM_SHIFT);
             field[2] = PIECE_BISHOP | w | (2 << FROM_SHIFT);
-            field[3] = PIECE_QUEEN  | w | (3 << FROM_SHIFT);
-            field[4] = PIECE_KING   | w | (4 << FROM_SHIFT);
+            field[3] = PIECE_KING   | w | (3 << FROM_SHIFT);
+            field[4] = PIECE_QUEEN  | w | (4 << FROM_SHIFT);
             field[5] = PIECE_BISHOP | w | (5 << FROM_SHIFT);
             field[6] = PIECE_KNIGHT | w | (6 << FROM_SHIFT);
             field[7] = PIECE_ROOK   | w | (7 << FROM_SHIFT);
@@ -103,8 +103,8 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
             field[56] = PIECE_ROOK   | b | (56 << FROM_SHIFT);
             field[57] = PIECE_KNIGHT | b | (57 << FROM_SHIFT);
             field[58] = PIECE_BISHOP | b | (58 << FROM_SHIFT);
-            field[59] = PIECE_QUEEN  | b | (59 << FROM_SHIFT);
-            field[60] = PIECE_KING   | b | (60 << FROM_SHIFT);
+            field[59] = PIECE_KING   | b | (59 << FROM_SHIFT);
+            field[60] = PIECE_QUEEN  | b | (60 << FROM_SHIFT);
             field[61] = PIECE_BISHOP | b | (61 << FROM_SHIFT);
             field[62] = PIECE_KNIGHT | b | (62 << FROM_SHIFT);
             field[63] = PIECE_ROOK   | b | (63 << FROM_SHIFT);
@@ -116,12 +116,21 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32) {
 
             // Test Piece
             //field[40] = PIECE_PAWN   | w | (48u32 << FROM_SHIFT) ;
-            field[25] = PIECE_BISHOP | b | (25 << FROM_SHIFT);
-            field[39] = PIECE_BISHOP | b | (39 << FROM_SHIFT);
-            field[6] = PIECE_BISHOP | b | (6 << FROM_SHIFT);
+            //field[25] = PIECE_BISHOP | b | (25 << FROM_SHIFT);
+            //field[39] = PIECE_BISHOP | b | (39 << FROM_SHIFT);
+            //field[6] = PIECE_BISHOP | b | (6 << FROM_SHIFT);
+            field[36] = PIECE_ROOK   | b | (36 << FROM_SHIFT);
+            field[40] = PIECE_ROOK   | b | (40 << FROM_SHIFT);
+            field[31] = PIECE_ROOK   | b | (31 << FROM_SHIFT);
+            field[27] = PIECE_QUEEN  | b | (27 << FROM_SHIFT);
+            field[51] = PIECE_NONE;
+            field[52] = PIECE_NONE;
+            field[10] = PIECE_NONE;
+            field[11] = PIECE_NONE;
+            field[12] = PIECE_NONE;
+            field[37] = PIECE_KING | w | (37 << FROM_SHIFT);
 
-
-            player_color = COLOR_BLACK;
+            player_color = COLOR_WHITE;
         }
     }
 
@@ -173,13 +182,14 @@ pub fn generate_fen_from_field(field: &Field, _flag_data: u32) -> Fen{
 
 /// TODO! \
 /// Generates a field from the calculated chess move
-pub fn generate_field_from_move(mut field: Field, mut flag_data: FlagData, from_usize: usize, to_u32: u32) -> (Field, FlagData) {
-    let from_u32 = from_usize as u32;
+pub fn generate_field_from_move(field: &mut Field, flag_data: &mut FlagData, from_usize: usize, to_u32: u32) -> u128 {
+    let time_check = std::time::Instant::now();
+    let _from_u32 = from_usize as u32;
     let to_usize = to_u32 as usize;
 
     // shifted for piece data
-    let from_shifted = from_usize << FROM_SHIFT;
-    let to_shifted = to_usize << TO_SHIFT;
+    //let from_shifted = from_usize << FROM_SHIFT;
+    //let to_shifted = to_usize << TO_SHIFT;
 
     //println!("Field old : {:?}", &field);
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
@@ -190,7 +200,7 @@ pub fn generate_field_from_move(mut field: Field, mut flag_data: FlagData, from_
 
     // Adjust flag_data
     if piece_to_move & PIECE_MASK == PIECE_PAWN{
-        flag_data = (flag_data & PAWN_MOVES_MASK) + (1 << PAWN_MOVES_SHIFT);
+        *flag_data += 1u32 << PAWN_MOVES_SHIFT;
     }
 
     // place new piece
@@ -198,9 +208,10 @@ pub fn generate_field_from_move(mut field: Field, mut flag_data: FlagData, from_
 
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
     //println!("Field new : {:?}", &field);
-    (field, flag_data)
+    time_check.elapsed().as_nanos()
 }
 
+// !IRGENDWAS FALSCH
 
 /// TODO! \
 /// Find all legal chess_moves a piece can make on the board
@@ -237,7 +248,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     if field[(position + 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position + 8);
                     }
-                    if position > 7 && position < 16 && field[(position + 16) as usize] & PIECE_MASK == PIECE_NONE {
+                    if position > 7 && position < 16 && (field[(position + 16) as usize] | field[(position + 8) as usize]) & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position + 16);
                     }
 
@@ -268,7 +279,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     if field[(position - 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 8);
                     }
-                    if position > 40 && position < 56 && field[(position - 16) as usize] & PIECE_MASK == PIECE_NONE {
+                    if position > 40 && position < 56 && (field[(position - 16) as usize] | field[(position - 8) as usize]) & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position - 16);
                     }
 
@@ -341,11 +352,11 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
             }
             // Voll bestimmt
             PIECE_BISHOP => {
-                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
-                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+                let left_squares: [u32; 8]  = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8] = [0,8,16,24,32,40,48,56];
                 // up-right
                 for move_length in 1..8{
-                    if !(position<56) || (position+(7*move_length)) > 56{
+                    if !(position<56) || (position+(7*move_length)) > 56 || right_squares.contains(&(position+7*(move_length-1))){
                         break
                     }
                     if !right_squares.contains(&position) && field[(position+(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
@@ -362,7 +373,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                 }
                 // up-left
                 for move_length in 1..8{
-                    if !(position<56) || (position+(9*move_length)) > 56{
+                    if !(position<56) || (position+(9*move_length)) > 56 || left_squares.contains(&(position+9*(move_length-1))){
                         break
                     }
                     if !left_squares.contains(&position) && field[(position+(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
@@ -379,7 +390,7 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                 }
                 // down-right
                 for move_length in 1..8{
-                    if !(position>8) || (position-(9*move_length)) < 8{
+                    if !(position>8) || (position-(9*move_length)) < 8 || right_squares.contains(&(position-9*(move_length-1))){
                         break
                     }
                     if !right_squares.contains(&position) && field[(position-(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
@@ -397,10 +408,10 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                 }
                 // down-left
                 for move_length in 1..8{
-                    if !(position>8) || (position-(7*move_length)) < 8 {
+                    if !(position>8) || (position-(7*move_length)) < 8 || left_squares.contains(&(position-7*(move_length-1))){
                         break
                     }
-                    println!("{} && {} -> {}",!left_squares.contains(&position),field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE, field[(position-(7*move_length)) as usize]);
+                    //println!("{} && {} -> {}",!left_squares.contains(&position),field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE, field[(position-(7*move_length)) as usize]);
                     if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position-(7*move_length));
                     } else if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & COLOR_MASK != player_color{
@@ -414,17 +425,261 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
                     }
                 }
             }
-            // Nicht bestimmt
-            PIECE_ROOK | PIECE_ROOK_MOVED => {
-                // Rook moves
+            // Voll bestimmt
+            PIECE_ROOK => {
+                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+
+                for move_length in 1..8 {
+                    // right
+                    if right_squares.contains(&((position-(move_length-1)))) || right_squares.contains(&position){
+                        break
+                    }
+
+                    if field[(position-move_length) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-move_length);
+                    } else if (field[(position-move_length) as usize] & COLOR_MASK) != player_color{
+                        legal_moves.push(position-move_length);
+                        break
+                    } else{
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // left
+                    if left_squares.contains(&((position+(move_length-1)))) || left_squares.contains(&position){
+                        break
+                    }
+
+                    if field[(position+move_length) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+move_length);
+                    } else if (field[(position+move_length) as usize] & COLOR_MASK) != player_color{
+                        legal_moves.push(position+move_length);
+                        break
+                    } else{
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // up
+                    if (position+(move_length-1)*8) > 55{
+                        break
+                    }
+
+                    if field[(position+move_length*8) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+move_length*8);
+                    } else if field[(position+move_length*8) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+move_length*8);
+                        break
+                    } else {
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // down
+                    if (position-(move_length-1)*8) < 8{
+                        break
+                    }
+
+                    if field[(position-move_length*8) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-move_length*8);
+                    } else if field[(position-move_length*8) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-move_length*8);
+                        break
+                    } else {
+                        break
+                    }
+                }
             }
-            // Nicht bestimmt
+            // Voll bestimmt
             PIECE_QUEEN => {
                 // Queen moves
+                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+
+                // bishop moves
+                for move_length in 1..8{
+                    if !(position<56) || (position+(7*move_length)) > 56 || right_squares.contains(&(position+7*(move_length-1))){
+                        break
+                    }
+                    if !right_squares.contains(&position) && field[(position+(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+(7*move_length));
+                    } else if !right_squares.contains(&position) && field[(position+(7*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+(7*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position+(7*move_length))){
+                        break
+                    }
+                }
+                // up-left
+                for move_length in 1..8{
+                    if !(position<56) || (position+(9*move_length)) > 56 || left_squares.contains(&(position+9*(move_length-1))){
+                        break
+                    }
+                    if !left_squares.contains(&position) && field[(position+(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+(9*move_length));
+                    } else if !left_squares.contains(&position) && field[(position+(9*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+(9*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position+(9*move_length))){
+                        break
+                    }
+                }
+                // down-right
+                for move_length in 1..8{
+                    if !(position>8) || (position-(9*move_length)) < 8 || right_squares.contains(&(position-9*(move_length-1))){
+                        break
+                    }
+                    if !right_squares.contains(&position) && field[(position-(9*move_length)) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-(9*move_length));
+                    } else if !right_squares.contains(&position) && field[(position-(9*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-(9*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position-(9*move_length))){
+                        break
+                    }
+
+                }
+                // down-left
+                for move_length in 1..8{
+                    if !(position>8) || (position-(7*move_length)) < 8 || left_squares.contains(&(position-7*(move_length-1))){
+                        break
+                    }
+                    //println!("{} && {} -> {}",!left_squares.contains(&position),field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE, field[(position-(7*move_length)) as usize]);
+                    if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & PIECE_MASK == PIECE_NONE {
+                        legal_moves.push(position-(7*move_length));
+                    } else if !left_squares.contains(&position) && field[(position-(7*move_length)) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-(7*move_length));
+                        break
+                    } else {
+                        break
+                    }
+                    if right_squares.contains(&(position-(7*move_length))){
+                        break
+                    }
+                }
+
+                // from rook
+                for move_length in 1..8 {
+                    // right
+                    if right_squares.contains(&((position-(move_length-1)))) || right_squares.contains(&position){
+                        break
+                    }
+
+                    if field[(position-move_length) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-move_length);
+                    } else if (field[(position-move_length) as usize] & COLOR_MASK) != player_color{
+                        legal_moves.push(position-move_length);
+                        break
+                    } else{
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // left
+                    if left_squares.contains(&((position+(move_length-1)))) || left_squares.contains(&position){
+                        break
+                    }
+
+                    if field[(position+move_length) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+move_length);
+                    } else if (field[(position+move_length) as usize] & COLOR_MASK) != player_color{
+                        legal_moves.push(position+move_length);
+                        break
+                    } else{
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // up
+                    if (position+(move_length-1)*8) > 55{
+                        break
+                    }
+
+                    if field[(position+move_length*8) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position+move_length*8);
+                    } else if field[(position+move_length*8) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position+move_length*8);
+                        break
+                    } else {
+                        break
+                    }
+                }
+
+                for move_length in 1..8 {
+                    // down
+                    if (position-(move_length-1)*8) < 8{
+                        break
+                    }
+
+                    if field[(position-move_length*8) as usize] & PIECE_MASK == PIECE_NONE{
+                        legal_moves.push(position-move_length*8);
+                    } else if field[(position-move_length*8) as usize] & COLOR_MASK != player_color{
+                        legal_moves.push(position-move_length*8);
+                        break
+                    } else {
+                        break
+                    }
+                }
             }
-            // Nicht bestimmt
+            // Voll bestimmt
             PIECE_KING => {
-                // King moves
+                let left_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
+                let right_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
+
+                //right
+                if !right_squares.contains(&position) && (field[(position+1) as usize] & PIECE_MASK == PIECE_NONE || field[(position+1) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position+1);
+                }
+
+                //left
+                if !right_squares.contains(&position) && (field[(position-1) as usize] & PIECE_MASK == PIECE_NONE || field[(position-1) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position-1);
+                }
+
+                //up
+                if position < 56 && (field[(position+8) as usize] & PIECE_MASK == PIECE_NONE || field[(position+8) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position+8);
+                }
+
+                //down
+                if position > 7 && (field[(position-8) as usize] & PIECE_MASK == PIECE_NONE || field[(position-8) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position-8);
+                }
+
+                //up-right
+                if position < 56 && !right_squares.contains(&position) && (field[(position+7) as usize] & PIECE_MASK == PIECE_NONE || field[(position+7) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position+7);
+                }
+
+                //up-left
+                if position < 56 && !left_squares.contains(&position) && (field[(position+9) as usize] & PIECE_MASK == PIECE_NONE || field[(position+9) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position+9);
+                }
+
+                //down-right
+                if position > 7 && !left_squares.contains(&position) && (field[(position-9) as usize] & PIECE_MASK == PIECE_NONE || field[(position-9) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position-9);
+                }
+
+                //down-left
+                if position > 7 && !left_squares.contains(&position) && (field[(position-7) as usize] & PIECE_MASK == PIECE_NONE || field[(position-7) as usize] & COLOR_MASK != player_color){
+                    legal_moves.push(position-7);
+                }
             }
             _ => {
                 // unreachable (Als Sicherheit)
@@ -437,16 +692,14 @@ fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player_col
 
 /// TODO! \
 /// Evaluates a single position and returns it's evaluated score
-pub fn evaluate_single_position(field: &Field, flag_data: &FlagData) -> EvaluationScore {
+pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> EvaluationScore {
     let piece_value = move |piece: &Piece| -> EvaluationScore{
         let piece = piece & PIECE_MASK;
         // Normal Chess Piece Value (These may be multiples later)
         match piece {
             PIECE_PAWN => 1,
-            PIECE_KNIGHT => 3,
-            PIECE_BISHOP => 3,
+            PIECE_KNIGHT | PIECE_BISHOP => 3,
             PIECE_ROOK => 5,
-            PIECE_ROOK_MOVED => 5,
             PIECE_QUEEN => 9,
 
             // No Value
@@ -473,11 +726,11 @@ pub fn evaluate_single_position(field: &Field, flag_data: &FlagData) -> Evaluati
 // Production Accessible functions (Other are available/public due to testing reasons)
 /// TODO! \
 /// Finds the best possible move according to the evaluation sore from `evaluate_single_position()`
-pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
+pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagData){
     // Generate Field from FEN
-    let (field , player_color): (Field, u32) = generate_field_from_fen(fen);
+    let (mut field , player_color): (Field, u32) = generate_field_from_fen(fen);
 
-    let flag_data: FlagData = 0b000001_000000_00000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [20] unused
+    let mut flag_data: FlagData = 0b000000_000000_1_1_000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [1] castle queen, [1] castle queen, ?[9] total moves, [18/9?] unused
     let mut legal_moves: Vec<Vec<u32>> = Vec::with_capacity(64);
 
     for i in 0..64 {
@@ -499,16 +752,18 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
     let mut current_best_move: ChessMove = 0;
     println!("INIT Eval: {}", &current_best_eval);
 
+    let mut elapsed_times: Vec<u128> = vec![];
+
     match player_color{
         COLOR_WHITE => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    let (field, flag_data) = generate_field_from_move(field, flag_data, piece_index, *chess_move);
+                    elapsed_times.push(generate_field_from_move(&mut field, &mut flag_data, piece_index, *chess_move));
                     let eval = evaluate_single_position(&field, &flag_data);
                     if eval > current_best_eval {
                         current_best_eval = eval;
                         current_best_move = (chess_move << TO_SHIFT) | ((piece_index as u32) << FROM_SHIFT);
-                        println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
+                        //println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
                     }
                 }
             }
@@ -516,12 +771,12 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
         COLOR_BLACK => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    let (field, flag_data) = generate_field_from_move(field, flag_data, piece_index, *chess_move);
+                    elapsed_times.push(generate_field_from_move(&mut field, &mut flag_data, piece_index, *chess_move));
                     let eval = evaluate_single_position(&field, &flag_data);
                     if eval < current_best_eval {
                         current_best_eval = eval;
                         current_best_move = (chess_move << TO_SHIFT) | ((piece_index as u32) << FROM_SHIFT);
-                        println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
+                        //println!("best_move: {:b} with eval: {}", &current_best_move, &current_best_eval);
                     }
                 }
             }
@@ -529,10 +784,20 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore){
         _ => {}
     }
 
+    let mut added_time = 0;
+    let numberoftimes = elapsed_times.len() as u128;
+    for time in elapsed_times{
+        added_time += time;
+    }
+
+    let final_time = added_time / numberoftimes;
+
+    println!("FINISHED TIME: {}ns", &final_time);
+
     // TODO!
     // If no move leads to a better position -> take first move since it wouldn't continue otherwise
     // Just as a fallback -> won't be needed with a more complex evaluation since little position changes can lead to big eval changes
 
     // Return the best move
-    (current_best_move, current_best_eval)
+    (current_best_move, current_best_eval, flag_data)
 }

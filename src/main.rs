@@ -1,4 +1,4 @@
-use crate::evaluation_engine::{find_best_move, generate_field_from_move, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
+use crate::evaluation_engine::{find_best_move, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
 
 mod evaluation_engine;
 
