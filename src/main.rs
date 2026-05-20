@@ -1,6 +1,11 @@
-use crate::evaluation_engine::{find_best_move, FROM_MASK, FROM_SHIFT, TO_MASK, TO_SHIFT};
+// main.rs
+//
+// Start point of the program
 
-mod evaluation_engine;
+use ferrum::{
+    protocol::interaction::find_best_move,
+    constants::*
+};
 
 // Tests import
 #[cfg(test)]

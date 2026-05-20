@@ -1,9 +1,20 @@
+// tests.rs
+//
+// Tests single functionalities
+
 #[cfg(test)]
 mod tests {
+    use ferrum::{
+        *,
+        board::manipulation::*,
+        constants::*,
+        protocol::interaction::find_best_move
+    };
+
+
     const NUMBER_TESTS_GENERATE_FIELD_FROM_FEN: usize = 1;
     const NUMBER_TESTS_GENERATE_FEN_FROM_FIELD: usize = 1;
 
-    use crate::evaluation_engine::*;
     // ###########
     // ## Tests ##
     // ###########
