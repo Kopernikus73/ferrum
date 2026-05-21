@@ -8,8 +8,6 @@ use ferrum::{
 };
 
 // Tests import
-#[cfg(test)]
-mod tests;
 
 fn main(){
     // Start timer

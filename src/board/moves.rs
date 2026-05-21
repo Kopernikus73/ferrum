@@ -16,9 +16,8 @@ pub fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player
     let color = piece & COLOR_MASK;
     let piece_type = piece & PIECE_MASK;
     let position: u32 = (piece & FROM_MASK) >> FROM_SHIFT;
-    let _destination = (piece & TO_MASK) >> TO_SHIFT;
-    let _promotion = piece & PROMOTE_MASK;
-    let _check = piece & CHECK_MASK;
+    //let _destination = (piece & TO_MASK) >> TO_SHIFT;
+    //let _promotion = piece & PROMOTE_MASK;
 
 
     //println!("Piece: {:b} | From: {:b} | Pos:{:x}",piece, piece & FROM_MASK, position);
