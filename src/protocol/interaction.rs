@@ -10,7 +10,7 @@ use crate::board::{
     manipulation::{
         generate_field_from_fen,
         // generate_fen_from_field,
-        generate_field_from_move
+        change_field_by_move
     }
 };
 use crate::engine::eval::evaluate_single_position;
@@ -21,20 +21,24 @@ use crate::engine::eval::evaluate_single_position;
 pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagData){
     // Generate Field from FEN
     let (mut field , player_color, mut flag_data): (Field, u32, FlagData) = generate_field_from_fen(fen);
+    //dbg!(&field);
 
     //let mut flag_data: FlagData = 0b000000_000000_1_1_000000000000000000; // [6] moves_since_pawn, [6] en_passant_square, [1] castle queen, [1] castle queen, ?[9] total moves, [18/9?] unused
     let mut legal_moves: Vec<Vec<u32>> = Vec::with_capacity(64);
 
+
+    println!();
+    println!("Player: {}", match player_color {
+        COLOR_WHITE => String::from("White"),
+        COLOR_BLACK => String::from("Black"),
+        _ => String::from("NO COLOR FOUND")
+    });
+    println!();
     for i in 0..64 {
         let chess_move = field[i];
         legal_moves.push(find_legal_moves(chess_move, &field, flag_data, player_color));
         println!("PIECE{}: {:?}",i, legal_moves[i]);
     }
-    //println!("piece3:{:b}", field[3]);
-    println!("\nfd: {:032b}\n",&flag_data);
-
-    //println!("{:?}", legal_moves);
-
 
     // ########################
     // ## Evaluation Tactics ##
@@ -43,8 +47,13 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
     // ## Single Depth - No Alpha-Beta pruning ##
     // Most simple Szenario: no a-b pruning, checking every single move till the end (here firstly only one move)
 
-    let mut current_best_eval: EvaluationScore = evaluate_single_position(&field, &flag_data);
+    let mut current_best_eval: EvaluationScore = if player_color == COLOR_BLACK{
+        i16::MAX
+    } else {
+        i16::MIN
+    };
     let mut current_best_move: ChessMove = 0;
+    
     println!("INIT Eval: {}", &current_best_eval);
 
     let mut elapsed_times: Vec<u128> = vec![];
@@ -54,7 +63,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
         COLOR_WHITE => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    elapsed_times.push(generate_field_from_move(&mut field, &mut flag_data, piece_index, *chess_move));
+                    elapsed_times.push(change_field_by_move(&mut field, &mut flag_data, piece_index, *chess_move));
                     let eval = evaluate_single_position(&field, &flag_data);
                     if eval > current_best_eval {
                         current_best_eval = eval;
@@ -67,7 +76,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
         COLOR_BLACK => {
             for (piece_index, piece_moves) in legal_moves.iter().enumerate(){
                 for chess_move in piece_moves{
-                    elapsed_times.push(generate_field_from_move(&mut field, &mut flag_data, piece_index, *chess_move));
+                    elapsed_times.push(change_field_by_move(&mut field, &mut flag_data, piece_index, *chess_move));
                     let eval = evaluate_single_position(&field, &flag_data);
                     if eval < current_best_eval {
                         current_best_eval = eval;

@@ -34,10 +34,9 @@ pub const PROMOTE_MASK: u32 =  0b0_000_000000_000000_111_0000000000000;
 //const PIECE_SHIFT: u32 =   28;
 pub const FROM_SHIFT: u32 =  22;
 pub const TO_SHIFT: u32 =    16;
-//const PROMOTE_SHIFT: u32 = 15;
-//const CHECK_SHIFT: u32 =   13;
+//const PROMOTE_SHIFT: u32 = 13;
 
-//const FROM_TO_SHIFT: u32 =  6;
+//const FROM_TO_SHIFT: u32 =  6; 
 
 // Pieces
 pub const PIECE_NONE:   u32 =

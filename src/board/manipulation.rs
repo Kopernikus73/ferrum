@@ -2,10 +2,12 @@
 //
 // Board manipulation
 // e.g. - Generating a field from input formats (FEN, PGN?)
-//      - Generating a new board from a given input move
+//      - Changing a given board by a input move
 //      - Generate a new format from a board (FEN)
+//      - Generate a move by algebraic notation todo!
+//      - Generate algebraic notation by a move todo!
 
-use crate::{Fen, FlagData, Field, ChessMove, Piece, EvaluationScore};
+use crate::{Fen, FlagData, Field};
 use crate::constants::*;
 
 macro_rules! p {
@@ -50,16 +52,24 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
 
     fn debug_field_binary(field: &Field, label: &str) {
         println!("{}:", label);
+        print!("  ");
         for i in 0..64 {
-            if i % 8 == 0 && i > 0 {
-                print!("\n ");
+            if i % 8 == 0 && i != 0{
+                print!("\n  ")
             }
-            if i % 8 == 0 {
-                print!(" ");
-            }
-            print!("{:04b} ", (field[i] >> 28) & 0b1111);
+            print!("{:04b} ", field[63 - i] >> 28);
         }
         println!("\n");
+    }
+    fn print_grid() {
+        for row in (0..8).rev() {
+            print!("   ");
+            for col in 0..8 {
+                let num = row * 8 + col;
+                print!("{:>2}   ", num);
+            }
+            println!();
+        }
     }
 
     match fen{
@@ -133,22 +143,26 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
                     }
                     _ => {
                         if let Some(free_spaces) = piece_part.to_digit(10) {
-                            current_position += free_spaces;
                             for field_index in 0..free_spaces {
                                 field[(current_position + field_index) as usize] = p!(none);
                             }
+                            current_position += free_spaces;
                         } else {
                             eprintln!("\x1b[31mInvalid fen piece character\x1b[0m");
                             std::process::exit(12);
                         }
                     }
                 }
+                //println!("{} - {}", current_position, piece_part);
+                //debug_field_binary(&field, &piece_part.to_string());
             }
             debug_field_binary(&field, "Field");
+            print_grid();
+            println!();
 
             // Player Color
             player_color = match fen_parts[1]{
-                "w" =>     {COLOR_WHITE},
+                "w" => {COLOR_WHITE},
                 "b" => {COLOR_BLACK},
                 _ => {
                     eprintln!("\x1b[31mInvalid fen color character\x1b[0m");
@@ -160,10 +174,10 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
             for castle_part in fen_parts[2].chars() {
                 match castle_part{
                     'q' | 'Q' => {
-                        flag_data += 0b1 << CASTLE_QUEEN_SHIFT;
+                        flag_data += 0b1 << (CASTLE_QUEEN_SHIFT-1);
                     }
                     'k' | 'K' => {
-                        flag_data += 0b1 << CASTLE_KING_SHIFT;
+                        flag_data += 0b1 << (CASTLE_KING_SHIFT-1);
                     }
                     '-' => {
 
@@ -192,7 +206,7 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
             }
         }
     }
-    // FOR MANUAL
+    // FOR MANUAL CONTROL
     /*field = [
         p!(r, white, 0),p!(none),p!(b, white, 2),p!(k, white, 3),p!(q, white, 4),p!(b, white, 5),p!(none),p!(r, white, 7),
         p!(none),p!(none),p!(p, white, 10),p!(none),p!(p, white, 12),p!(p, white, 13),p!(p, white, 14),p!(none),
@@ -206,7 +220,8 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
     player_color = pcolor!(white);
     */
 
-    println!("fd: {}", flag_data);
+    println!("fd: {:032b} (moves_since_pawn: {:06b}, en_passant_square: {:06b}, CastleQ: {:01b}, CastleK: {:01b})", flag_data, (flag_data & PAWN_MOVES_MASK) >> PAWN_MOVES_SHIFT, (flag_data & EN_PASSANT_MASK) >> EN_PASSANT_SHIFT, (flag_data & CASTLE_QUEEN_MASK) >> CASTLE_QUEEN_SHIFT, (flag_data & CASTLE_KING_MASK) >> CASTLE_KING_SHIFT);
+
     // Return field and player_color since they are always initialized
     (field, player_color, flag_data)
 }
@@ -255,14 +270,10 @@ pub fn generate_fen_from_field(field: &Field, _flag_data: u32) -> Fen{
 
 /// TODO! \
 /// Generates a field from the calculated chess move
-pub fn generate_field_from_move(field: &mut Field, flag_data: &mut FlagData, from_usize: usize, to_u32: u32) -> u128 {
+pub fn change_field_by_move(field: &mut Field, flag_data: &mut FlagData, from_usize: usize, to_u32: u32) -> u128 {
     let time_check = std::time::Instant::now();
     let _from_u32 = from_usize as u32;
     let to_usize = to_u32 as usize;
-
-    // shifted for piece data
-    //let from_shifted = from_usize << FROM_SHIFT;
-    //let to_shifted = to_usize << TO_SHIFT;
 
     //println!("Field old : {:?}", &field);
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
@@ -283,4 +294,3 @@ pub fn generate_field_from_move(field: &mut Field, flag_data: &mut FlagData, fro
     //println!("Field new : {:?}", &field);
     time_check.elapsed().as_nanos()
 }
-// !IRGENDWAS FALSCH

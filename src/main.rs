@@ -19,20 +19,11 @@ fn main(){
 
     // Test find_best_move function
     let best_move = find_best_move(Some(&String::from("\
-    rnbqkbnr/1p1ppppp/p1p5/8/3PP3/3B4/PPP2PPP/RNBQK1NR b KQkq - 1 3\
+    rnbqkbnr/pppp1ppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1\
     ")));
     println!("from->to: {}->{} with eval: {}\n", (best_move.0 & FROM_MASK) >> FROM_SHIFT, (best_move.0 & TO_MASK) >> TO_SHIFT, best_move.1);
 
-    fn print_grid() {
-        for row in (0..8).rev() {
-            for col in (0..8).rev() {
-                let num = row * 8 + col;
-                print!("{:>2} ", num);
-            }
-            println!();
-        }
-    }
-    print_grid();
+    
 
     // Get elapsed time since the start
     let elapsed_time = start_time.elapsed().as_nanos();
