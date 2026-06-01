@@ -19,7 +19,7 @@ fn main(){
 
     // Test find_best_move function
     let best_move = find_best_move(Some(&String::from("\
-    rnbqkbnr/pppp1ppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1\
+    rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\
     ")));
     println!("from->to: {}->{} with eval: {}\n", (best_move.0 & FROM_MASK) >> FROM_SHIFT, (best_move.0 & TO_MASK) >> TO_SHIFT, best_move.1);
 

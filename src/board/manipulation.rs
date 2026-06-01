@@ -53,13 +53,13 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
     fn debug_field_binary(field: &Field, label: &str) {
         println!("{}:", label);
         print!("  ");
-        for i in 0..64 {
-            if i % 8 == 0 && i != 0{
-                print!("\n  ")
+        for row in 0..8{
+            for col in 0..8 {
+                print!("{:04b} ", field[64 - (row * 8) - (8 - col)] >> 28);
             }
-            print!("{:04b} ", field[63 - i] >> 28);
+            print!("\n  ");
         }
-        println!("\n");
+        println!();
     }
     fn print_grid() {
         for row in (0..8).rev() {
@@ -87,59 +87,60 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
             println!("{:?}", fen_parts);
 
             // Field
-            let mut current_position: u32 = 0;
+            let mut current_position: u32 = 56;
+            let mut temp_slash = false;
             for piece_part in fen_parts[0].chars() {
                 match piece_part {
                     'r' => {
-                        field[current_position as usize] = p!(r, white, current_position);
-                        current_position += 1;
-                    }
-                    'n' => {
-                        field[current_position as usize] = p!(n, white, current_position);
-                        current_position += 1;
-                    }
-                    'b' => {
-                        field[current_position as usize] = p!(b, white, current_position);
-                        current_position += 1;
-                    }
-                    'q' => {
-                        field[current_position as usize] = p!(q, white, current_position);
-                        current_position += 1;
-                    }
-                    'k' => {
-                        field[current_position as usize] = p!(k, white, current_position);
-                        current_position += 1;
-                    }
-                    'p' => {
-                        field[current_position as usize] = p!(p, white, current_position);
-                        current_position += 1;
-                    }
-                    'R' => {
                         field[current_position as usize] = p!(r, black, current_position);
                         current_position += 1;
                     }
-                    'N' => {
+                    'n' => {
                         field[current_position as usize] = p!(n, black, current_position);
                         current_position += 1;
                     }
-                    'B' => {
+                    'b' => {
                         field[current_position as usize] = p!(b, black, current_position);
                         current_position += 1;
                     }
-                    'Q' => {
+                    'q' => {
                         field[current_position as usize] = p!(q, black, current_position);
                         current_position += 1;
                     }
-                    'K' => {
+                    'k' => {
                         field[current_position as usize] = p!(k, black, current_position);
                         current_position += 1;
                     }
-                    'P' => {
+                    'p' => {
                         field[current_position as usize] = p!(p, black, current_position);
                         current_position += 1;
                     }
+                    'R' => {
+                        field[current_position as usize] = p!(r, white, current_position);
+                        current_position += 1;
+                    }
+                    'N' => {
+                        field[current_position as usize] = p!(n, white, current_position);
+                        current_position += 1;
+                    }
+                    'B' => {
+                        field[current_position as usize] = p!(b, white, current_position);
+                        current_position += 1;
+                    }
+                    'Q' => {
+                        field[current_position as usize] = p!(q, white, current_position);
+                        current_position += 1;
+                    }
+                    'K' => {
+                        field[current_position as usize] = p!(k, white, current_position);
+                        current_position += 1;
+                    }
+                    'P' => {
+                        field[current_position as usize] = p!(p, white, current_position);
+                        current_position += 1;
+                    }
                     '/' => {
-
+                        temp_slash = true;
                     }
                     _ => {
                         if let Some(free_spaces) = piece_part.to_digit(10) {
@@ -152,6 +153,12 @@ pub fn generate_field_from_fen(fen: Option<&Fen>) -> (Field, u32, FlagData) {
                             std::process::exit(12);
                         }
                     }
+                }
+                // position logic
+                if current_position % 8 == 0 && current_position > 15 && !temp_slash {
+                    current_position -= 16;
+                } else if temp_slash{
+                    temp_slash = false;
                 }
                 //println!("{} - {}", current_position, piece_part);
                 //debug_field_binary(&field, &piece_part.to_string());

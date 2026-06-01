@@ -38,7 +38,6 @@ pub fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player
                 // Kein over-/underflow check nötig → kann nicht am Rand stehen
                 if color == COLOR_WHITE {
                     // move forward
-                    println!("pos:{position}, Piece:{piece_type}");
                     if field[(position + 8) as usize] & PIECE_MASK == PIECE_NONE {
                         legal_moves.push(position + 8);
                     }
@@ -436,7 +435,6 @@ pub fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player
             }
             // Voll bestimmt
             PIECE_KING => {
-                println!("KING");
                 let right_squares: [u32; 8]          = [7,15,23,31,39,47,55,63];
                 let left_squares: [u32; 8]         = [0,8,16,24,32,40,48,56];
 
@@ -446,7 +444,6 @@ pub fn find_legal_moves(piece: Piece, field: &Field, flag_data: FlagData, player
                 }
 
                 //left
-                println!("{}, pos:{}, f[-1]: {:032b}, ",!left_squares.contains(&position), position, field[(position-1) as usize]);
                 if !left_squares.contains(&position) && (field[(position-1) as usize] & PIECE_MASK == PIECE_NONE || field[(position-1) as usize] & COLOR_MASK != player_color){
                     legal_moves.push(position-1);
                 }
