@@ -12,7 +12,7 @@ It's just aiming to find out what methods there are to optimize a chess bot.
 ### Manual installation on Linux (recommended) 
 #### Requirements
 - git
-- rust (cargo)
+- rust (cargo, rustc)
 
 To manually install ferrum just download this git repository and build the binary using cargo
 
