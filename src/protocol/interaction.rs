@@ -37,7 +37,7 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
     for i in 0..64 {
         let chess_move = field[i];
         legal_moves.push(find_legal_moves(chess_move, &field, flag_data, player_color));
-        println!("PIECE{}: {:?}",i, legal_moves[i]);
+        //println!("PIECE{}: {:?}",i, legal_moves[i]);
     }
 
     // ########################
@@ -90,19 +90,34 @@ pub fn find_best_move(fen: Option<&Fen>) -> (ChessMove, EvaluationScore, FlagDat
     }
 
     let mut added_time = 0;
-    let numberoftimes = elapsed_times.len() as u128;
+    let number_of_times = elapsed_times.len() as u128;
     for time in elapsed_times{
         added_time += time;
     }
 
-    let final_time = added_time / numberoftimes;
+    let final_time = added_time / number_of_times;
 
-    println!("\x1b[33mInner Time:\x1b[0m {:?}\n\x1b[33mFINISHED TIME:\x1b[0m {}ns | {}ns",elapsed_time_inner.elapsed() ,&final_time, added_time);
+    println!("\x1b[33mInner Time:\x1b[0m {}\n\x1b[33mField time:\x1b[0m {} | avg: {} ",format_duration(elapsed_time_inner.elapsed().as_nanos()) ,format_duration(final_time), format_duration(added_time));
 
-    // TODO!
-    // If no move leads to a better position -> take first move since it wouldn't continue otherwise
-    // Just as a fallback -> won't be needed with a more complex evaluation since little position changes can lead to big eval changes
+
 
     // Return the best move
     (current_best_move, current_best_eval, flag_data)
+}
+
+// Only temporary
+fn format_duration(nanos: u128) -> String {
+    const NANOS_PER_MICRO: u128 = 1_000;
+    const NANOS_PER_MILLI: u128 = 1_000_000;
+    const NANOS_PER_SECOND: u128 = 1_000_000_000;
+
+    if nanos < NANOS_PER_MICRO {
+        format!("{:.2} ns", nanos as f64)
+    } else if nanos < NANOS_PER_MILLI {
+        format!("{:.2} µs", nanos as f64 / NANOS_PER_MICRO as f64)
+    } else if nanos < NANOS_PER_SECOND {
+        format!("{:.2} ms", nanos as f64 / NANOS_PER_MILLI as f64)
+    } else {
+        format!("{:.2} s", nanos as f64 / NANOS_PER_SECOND as f64)
+    }
 }

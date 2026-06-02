@@ -297,6 +297,19 @@ pub fn change_field_by_move(field: &mut Field, flag_data: &mut FlagData, from_us
     // place new piece
     field[to_usize] = piece_to_move & !FROM_MASK | (to_u32 << TO_SHIFT);
 
+    // castling check   // flag data?
+    if piece_to_move & PIECE_MASK == PIECE_KING {
+        if from_usize as i32 - to_u32 as i32 >= 2{
+            field[to_usize+1] = PIECE_ROOK | (piece_to_move & COLOR_MASK) | ((to_u32+1) << TO_SHIFT);
+            // delete
+            field[to_usize-2] = PIECE_NONE;
+        } else if from_usize as i32 - to_u32 as i32 <= -2{
+            field[to_usize-1] = PIECE_ROOK | (piece_to_move & COLOR_MASK) | ((to_u32-1) << TO_SHIFT);
+            // delete
+            field[to_usize+1] = PIECE_NONE;
+        }
+    }
+
     //println!("{}: {:b}| {}: {:b}", &from_shifted, &field[from_shifted], &to_shifted, &field[to_shifted]);
     //println!("Field new : {:?}", &field);
     time_check.elapsed().as_nanos()

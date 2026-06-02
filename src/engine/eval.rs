@@ -2,7 +2,6 @@
 //
 // Evaluation of positions (in combination with e.g. heuristics.rs)
 
-use rand::RngExt;
 use crate::{Piece, Field, FlagData, EvaluationScore};
 use crate::constants::*;
 
@@ -10,7 +9,7 @@ use crate::constants::*;
 /// Evaluates a single position (should be deterministic - for now it's random to get some data)
 pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> EvaluationScore {
 
-
+    //
     let piece_value = move |piece: &Piece| -> EvaluationScore{
         let piece = piece & PIECE_MASK;
         // Normal Chess Piece Value (These may be multiples later)
@@ -29,9 +28,6 @@ pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> Evaluat
     let mut white_evaluation_score: EvaluationScore = 0;
     let mut black_evaluation_score: EvaluationScore = 0;
 
-    let mut rng = rand::rng();
-    white_evaluation_score += rng.random_range(0..10);
-
     // Add piece value to evaluation score
     for piece in field{
         match piece & COLOR_MASK{
@@ -40,6 +36,19 @@ pub fn evaluate_single_position(field: &Field, _flag_data: &FlagData) -> Evaluat
         }
     }
 
+    let eval_score = white_evaluation_score - black_evaluation_score;
+    if eval_score > 28000 || eval_score < -28000{
+        check_checkmate(field);
+    }
+
     // return
-    white_evaluation_score - black_evaluation_score
+    eval_score
 }
+
+#[allow(dead_code, unused_variables)]
+fn check_checkmate(field: &Field){
+    todo!();
+}
+
+
+
